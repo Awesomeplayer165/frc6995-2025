@@ -10,6 +10,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Pair;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -128,9 +129,13 @@ public class RepulsorFieldPlanner {
                 );
         }
     }
+
     public final AStarFieldPlanner astar = new AStarFieldPlanner();
     public static final double GOAL_STRENGTH = 0.65;
+    
+    // Crescendo Obstacles
 
+    /*
     public static final List<Obstacle> FIELD_OBSTACLES = List.of(
     new SnowmanObstacle(new Translation2d(5.56, 2.74),  0.4, true),
     new SnowmanObstacle(new Translation2d(3.45, 4.07),  0.4, true),
@@ -146,6 +151,24 @@ public class RepulsorFieldPlanner {
     new HorizontalObstacle(FIELD_WIDTH,   0.5, false),
     new VerticalObstacle(0.0,           0.5, true),
     new VerticalObstacle(FIELD_LENGTH,    0.5, false)
+    );
+     */
+
+    // Reefscape Obstacles
+
+    static final double FIELD_LENGTH = 17.55;
+    static final double FIELD_WIDTH = 8.05;
+
+    public static final List<Obstacle> FIELD_OBSTACLES = List.of(
+        new SnowmanObstacle(new Translation2d(4.535, FIELD_WIDTH / 2), 1.187, true),
+        new SnowmanObstacle(new Translation2d(13.104, FIELD_WIDTH / 2), 1.187, true)
+    );
+
+    public static final List<Obstacle> WALLS = List.of(
+        new HorizontalObstacle(0.0, 0.5, true),
+        new HorizontalObstacle(FIELD_LENGTH, 0.5, false),
+        new VerticalObstacle(0.0, 0.5, true),
+        new VerticalObstacle(FIELD_LENGTH, 0.5, false)
     );
 
     private List<Obstacle> fixedObstacles = new ArrayList<>();
