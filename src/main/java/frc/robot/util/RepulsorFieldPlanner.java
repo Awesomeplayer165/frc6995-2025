@@ -186,10 +186,10 @@ public class RepulsorFieldPlanner {
             new VerticalObstacle(FIELD_LENGTH, 0.5, false));
 
     private List<Obstacle> fixedObstacles = new ArrayList<>();
-    private Optional<Translation2d> goalOpt = Optional.empty();
+    private Optional<Pose2d> goalOpt = Optional.empty();
 
     public Pose2d goal() {
-        return new Pose2d(goalOpt.orElse(Translation2d.kZero), Rotation2d.kZero);
+        return goalOpt.orElse(Pose2d.kZero);
     }
 
     private final static int ARROWS_X = 40;
@@ -341,11 +341,20 @@ public class RepulsorFieldPlanner {
                 new double[4]);
     }
 
-    public void setGoal(Translation2d goal) {
+    public void setGoal(Pose2d goal) {
         this.goalOpt = Optional.of(goal);
         updateArrows();
     }
 
+    /**
+     * Generates a SwerveSample command based on the current pose, speeds, and goal.
+     *
+     * @param pose The current pose of the robot.
+     * @param currentSpeeds The current chassis speeds of the robot.
+     * @param maxSpeed The maximum speed the robot can travel.
+     * @param useGoal A boolean indicating whether to use the goal in calculations.
+     * @return A SwerveSample command for the robot.
+     */
     public SwerveSample getCmd(Pose2d pose, ChassisSpeeds currentSpeeds, double maxSpeed, boolean useGoal) {
         Translation2d speedPerSec = new Translation2d(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond);
         double currentSpeed = Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond);
@@ -356,10 +365,10 @@ public class RepulsorFieldPlanner {
                     pose.getRotation(), 0, 0, 0);
         } else {
             var startTime = System.nanoTime();
-            var goal = goalOpt.get();
+            var goal = goalOpt.get().getTranslation();
             var curTrans = pose.getTranslation();
             var err = curTrans.minus(goal);
-            if (useGoal && err.getNorm() < stepSize_m * 1.5) {
+            if (useGoal && err.getNorm() < stepSize_m * 1.5) { // are we close enough to the goal? Stop
                 return sample(goal, pose.getRotation(), 0, 0, 0);
             } else {
                 var obstacleForce = getObstacleForce(curTrans, goal);
@@ -372,23 +381,21 @@ public class RepulsorFieldPlanner {
 
                     stepSize_m = Math.min(maxSpeed, closeToGoalMax) * 0.02;
                 }
-                var step = new Translation2d(stepSize_m, netForce.getAngle());
-                var intermediateGoal = curTrans.plus(step);
+                var translationStep = new Translation2d(stepSize_m, netForce.getAngle());
+                var intermediateGoal = curTrans.plus(translationStep);
                 var endTime = System.nanoTime();
                 SmartDashboard.putNumber("repulsorTimeS", (endTime - startTime) / 1e9);
-                return sample(intermediateGoal, pose.getRotation(), step.getX() / 0.02, step.getY() / 0.02, 0);
+                return sample(intermediateGoal, this.goal().getRotation(), translationStep.getX() / 0.02, translationStep.getY() / 0.02, 0);
             }
-
         }
-
     }
 
     public double pathLength = 0;
 
-    public ArrayList<Translation2d> getTrajectory(Translation2d current, Translation2d goalTranslation,
+    public ArrayList<Translation2d> getTrajectory(Translation2d current, Pose2d goal,
             double stepSize_m) {
         pathLength = 0;
-        goalTranslation = goalOpt.orElse(goalTranslation);
+        var goalTranslation = goalOpt.orElse(goal).getTranslation();
         ArrayList<Translation2d> traj = new ArrayList<>();
         Translation2d robot = current;
         for (int i = 0; i < 400; i++) {

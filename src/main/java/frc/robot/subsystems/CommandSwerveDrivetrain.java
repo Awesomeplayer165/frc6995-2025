@@ -90,7 +90,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
     public Command repulsorCommand(Supplier<Pose2d> target) {
         return run(()->{
-            m_repulsor.setGoal(target.get().getTranslation());
+            m_repulsor.setGoal(target.get());
             followPath(state().Pose, m_repulsor.getCmd(state().Pose, state().Speeds, 4, true));
         }).alongWith(new ScheduleCommand(
             m_repulsor.astar.getCmd(()->state().Pose.getTranslation(), ()->target.get().getTranslation())));

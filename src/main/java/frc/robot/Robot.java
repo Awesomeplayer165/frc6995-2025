@@ -62,7 +62,7 @@ public class Robot extends TimedRobot {
     );
 
     for (int i = 0; i < RepulsorFieldPlanner.POIs.size(); i++) {
-      var poi = RepulsorFieldPlanner.POIs.get(i);
+      final var poi = RepulsorFieldPlanner.POIs.get(i);
       sendableChooser.addOption(poi.name, m_drivebaseS.repulsorCommand(() -> poi.pose));
     }
 
@@ -78,7 +78,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Points of Interest", sendableChooser);
   }
 
-  private static Translation2d amp = new Translation2d(2, 8);
+  private static Pose2d amp = new Pose2d(2, 8, Rotation2d.kZero);
 
   /**
    * This function is called every 20 ms, no matter the mode. Use this for items like diagnostics
