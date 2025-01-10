@@ -14,16 +14,21 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.util.AlertsUtil;
+import frc.robot.util.RepulsorFieldPlanner;
 
 /**
  * The methods in this class are called automatically corresponding to each mode, as described in
@@ -36,6 +41,8 @@ public class Robot extends TimedRobot {
   private final CommandXboxController m_driverController = new CommandXboxController(0);
   private final CommandSwerveDrivetrain m_drivebaseS = new CommandSwerveDrivetrain();
   private final SwerveRequest.FieldCentric m_driveRequest = new FieldCentric();
+
+  private final SendableChooser<Command> sendableChooser = new SendableChooser<>();
   
   public ArrayList<Translation2d> toAmp = new ArrayList<>();
   /**
@@ -53,10 +60,22 @@ public class Robot extends TimedRobot {
               .withRotationalRate(-m_driverController.getRightX() * 2 * Math.PI) // Drive counterclockwise with negative X (left)
       )
     );
-    m_driverController.a().whileTrue(m_drivebaseS.repulsorCommand(()->new Pose2d(2, 2, Rotation2d.kZero)));
-    m_driverController.b().whileTrue(m_drivebaseS.repulsorCommand(()->new Pose2d(2, 5, Rotation2d.kZero)));
-    m_driverController.x().whileTrue(m_drivebaseS.repulsorCommand(()->new Pose2d(2, 8, Rotation2d.kZero)));
-    m_driverController.y().whileTrue(m_drivebaseS.repulsorCommand(()->new Pose2d(15, 1, Rotation2d.kZero)));
+
+    for (int i = 0; i < RepulsorFieldPlanner.POIs.size(); i++) {
+      var poi = RepulsorFieldPlanner.POIs.get(i);
+      sendableChooser.addOption(poi.name, m_drivebaseS.repulsorCommand(() -> poi.pose));
+    }
+
+    sendableChooser.setDefaultOption(RepulsorFieldPlanner.POIs.get(0).name, m_drivebaseS.repulsorCommand(() -> RepulsorFieldPlanner.POIs.get(0).pose));
+
+    m_driverController.a().whileTrue(Commands.runOnce(() -> {
+      sendableChooser.getSelected().schedule();
+    }));
+    // m_driverController.b().whileTrue(m_drivebaseS.repulsorCommand(()->new Pose2d(2, 5, Rotation2d.kZero)));
+    // m_driverController.x().whileTrue(m_drivebaseS.repulsorCommand(()->new Pose2d(2, 8, Rotation2d.kZero)));
+    // m_driverController.y().whileTrue(m_drivebaseS.repulsorCommand(()->new Pose2d(15, 1, Rotation2d.kZero)));
+
+    SmartDashboard.putData("Points of Interest", sendableChooser);
   }
 
   private static Translation2d amp = new Translation2d(2, 8);
